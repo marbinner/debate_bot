@@ -275,7 +275,7 @@ def main():
         st.info("⚠️ Bot initialization failed. Please check your API key configuration.")
         return
     
-    # Create a centered container for the chat interface
+    # Create a centered container for the chat history display
     col1, col2, col3 = st.columns([1, 3, 1])
     
     with col2:
@@ -284,15 +284,15 @@ def main():
             thought = st.session_state.thoughts[i] if i < len(st.session_state.thoughts) else None
             personality_key = st.session_state.message_personalities[i] if i < len(st.session_state.message_personalities) else None
             display_message(message["role"], message["content"], thought, personality_key, i)
-        
-        # Chat input (disabled during generation)
-        if prompt := st.chat_input("Enter your debate topic or argument...", disabled=st.session_state.generating):
-            # Add user message to session state
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            st.session_state.thoughts.append(None)
-            st.session_state.message_personalities.append(None)
-            st.session_state.generating = True
-            st.rerun()  # Rerun to show user message and start generation
+    
+    # Chat input (disabled during generation) - positioned at bottom outside container
+    if prompt := st.chat_input("Enter your debate topic or argument...", disabled=st.session_state.generating):
+        # Add user message to session state
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.thoughts.append(None)
+        st.session_state.message_personalities.append(None)
+        st.session_state.generating = True
+        st.rerun()  # Rerun to show user message and start generation
     
     # Generate bot response if user just sent a message
     if st.session_state.generating and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":

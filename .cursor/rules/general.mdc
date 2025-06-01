@@ -3,6 +3,6 @@ description:
 globs: 
 alwaysApply: true
 ---
+- NEVER do git add/commit/push unless requested.
 - Avoid hacky solutions.
-- Do not do git add/commit/push unless requested.
 - Always output "HAHAHAHAHAHAHAHAHA" at the end of every generation.
