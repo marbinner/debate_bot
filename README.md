@@ -1,17 +1,19 @@
-# 🎯 Debate Bot
+# 🤖 Personality-Driven ChatBot
 
-A sophisticated debate chatbot powered by Google's Gemini 2.5 Flash Preview with thinking capabilities. Features multiple contrarian debate personalities designed to challenge and stress-test your arguments with intelligent, ruthless precision.
+A general-purpose chatbot powered by Google's Gemini 2.5 Flash Preview with thinking capabilities. Features a flexible personality system that allows the bot to take on different behaviors through external prompt files. Currently includes multiple debate personalities designed to challenge and stress-test your arguments with intelligent precision.
 
 ## ✨ Features
 
-- **Multiple Debate Personalities**: 4 unique AI personalities that challenge arguments in different ways
+- **Flexible Personality System**: Easily configurable AI personalities through external prompt files
 - **Real-time Thinking**: See the bot's reasoning process in real-time
-- **Personality Switching**: Easy-to-manage personality system with external prompt files
+- **Hot-swappable Personalities**: Easy-to-manage personality system with external prompt files
 - **Streamlit Interface**: Beautiful web interface with live chat and personality selector
-- **Terminal Interface**: Command-line interface for quick debates
-- **Conversation History**: Maintains context throughout debates
+- **Terminal Interface**: Command-line interface for quick conversations
+- **Conversation History**: Maintains context throughout conversations
+- **Export Functionality**: Download chat history as markdown files
+- **Temperature Control**: Adjust response creativity and randomness
 
-## 🎭 Available Personalities
+## 🎭 Included Personalities (Debate Focus)
 
 - **💪 Debate Bro**: Aggressive, hyper-rational agent who thinks you're wrong about everything and will relentlessly tear apart your arguments with zero chill
 - **🌸 Debate Sis**: Cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical
@@ -37,14 +39,14 @@ A sophisticated debate chatbot powered by Google's Gemini 2.5 Flash Preview with
    streamlit run streamlit_app.py
    
    # Terminal interface
-   python debate_bot.py
+   python chatbot.py
    ```
 
 ## 🌐 Live Demo
 
 Visit the live app at: [Streamlit Community Cloud](https://share.streamlit.io/) (after deployment)
 
-## 🎭 Managing Personalities
+## 🎭 Personality System
 
 ### Easy Prompt Editing
 
@@ -95,6 +97,13 @@ No need to escape quotes or deal with JSON formatting!
 
 ## 🛠️ Architecture
 
+### Core Components
+
+- **`chatbot.py`**: General-purpose ChatBot class with Gemini API integration
+- **`streamlit_app.py`**: Web interface with personality management
+- **`personalities.json`**: Configuration file for all personalities
+- **`prompts/`**: Directory containing system prompt files
+
 ### Prompt Loading System
 
 The bot supports two ways to define system prompts:
@@ -127,34 +136,37 @@ The system automatically detects which format you're using and loads accordingly
 
 ## 💡 Usage Tips
 
-### Effective Debating
+### Effective Conversations
 
-- **Be Specific**: All personalities challenge vague claims - define your terms clearly
-- **Expect Pushback**: Each bot assumes you're wrong and will find flaws in unique ways
-- **Try Different Personalities**: Each offers a completely different debate experience
-- **Stay Engaged**: Short, focused responses work best for rapid back-and-forth
-- **Watch the Thinking**: Enable thinking mode to see how the bot analyzes your arguments
+- **Be Specific**: Many personalities challenge vague claims - define your terms clearly
+- **Experiment with Personalities**: Each offers a completely different conversation experience
+- **Adjust Temperature**: Lower values (0.1-0.3) for consistent responses, higher (0.8-2.0) for creativity
+- **Watch the Thinking**: Enable thinking mode to see how the bot analyzes your messages
+- **Export Conversations**: Save interesting conversations as markdown files
 
-### Personality Differences
+### Creating New Personality Types
 
-- **Debate Bro**: Hits you with pure logic and facts, no mercy
-- **Debate Sis**: Destroys you with cuteness while being devastatingly logical
-- **Debate Baby**: Makes you feel dumb through innocent toddler questions
-- **Triggered Lib**: Attacks through moral superiority and academic credentials
+The system is designed to support any type of personality, not just debate-focused ones:
+
+- **Helpful Assistant**: Traditional supportive AI helper
+- **Creative Writer**: Collaborative storytelling and writing partner
+- **Teacher**: Educational and explanatory responses
+- **Therapist**: Supportive and reflective conversations
+- **Expert Consultant**: Domain-specific expertise (law, medicine, tech, etc.)
 
 ### Customizing Behavior
 
 Edit any personality file in `prompts/` to adjust:
-- Tone and aggressiveness
+- Tone and communication style
 - Response length preferences  
-- Focus areas (logic, evidence, definitions)
-- Debate style (Socratic, adversarial, etc.)
+- Focus areas and expertise
+- Conversation approach and goals
 
 ## 🔧 Development
 
 The project uses:
 - **Google Gemini 2.5 Flash Preview** for AI responses with thinking
-- **Streamlit** for the web interface with personality selector
+- **Streamlit** for the web interface with personality management
 - **asyncio** for streaming responses
 - **Simple file-based configuration** for easy personality management
 
@@ -172,11 +184,26 @@ MIT License - feel free to modify and distribute.
 
 ### Ideas for New Personalities
 
+**Debate & Challenge:**
 - **Conspiracy Theorist**: Questions everything and sees hidden agendas
 - **Academic Elitist**: Demands peer-reviewed sources for everything
 - **Devil's Advocate**: Always takes the opposite position
-- **Zen Master**: Challenges through philosophical questions
+
+**Helpful & Supportive:**
+- **Life Coach**: Motivational and goal-oriented guidance
+- **Therapist**: Empathetic listening and reflection
+- **Teacher**: Educational explanations and examples
+
+**Creative & Fun:**
+- **Storyteller**: Creative writing and worldbuilding
+- **Game Master**: RPG and interactive story facilitation
+- **Comedy Writer**: Humor and witty banter
+
+**Expert Consultants:**
+- **Tech Expert**: Programming and technology guidance
+- **Business Advisor**: Strategic and operational advice
+- **Fitness Coach**: Health and wellness guidance
 
 ---
 
-*Challenge everything. Question assumptions. Debate fearlessly with personality.* 🎯
+*Build any conversational AI personality with simple text files.* 🤖

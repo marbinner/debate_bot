@@ -3,7 +3,7 @@ import asyncio
 import os
 import json
 from typing import Optional, Dict
-from debate_bot import DebateBot
+from chatbot import ChatBot
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -81,7 +81,7 @@ def initialize_session_state():
         initialize_bot()
 
 def initialize_bot() -> bool:
-    """Set up the DebateBot with API key and current personality."""
+    """Set up the ChatBot with API key and current personality."""
     try:
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
@@ -97,7 +97,7 @@ def initialize_bot() -> bool:
             system_prompt = "You are a helpful AI assistant."
         
         # Initialize bot with personality and temperature
-        st.session_state.bot = DebateBot(api_key, temperature=st.session_state.temperature)
+        st.session_state.bot = ChatBot(api_key, temperature=st.session_state.temperature)
         st.session_state.bot.update_system_prompt(system_prompt)
         st.session_state.bot_initialized = True
         return True
@@ -162,6 +162,51 @@ def display_message(role: str, content: str, thought: Optional[str] = None, pers
             
             # Show the actual response
             st.write(content)
+
+def export_chat_to_markdown() -> str:
+    """Export chat history to markdown format, excluding internal thinking."""
+    import datetime
+    
+    # Start with header
+    markdown_content = []
+    markdown_content.append("# Debate Bot Chat History")
+    markdown_content.append(f"*Exported on {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')}*")
+    markdown_content.append("")
+    
+    # If no messages, return empty chat message
+    if not st.session_state.messages:
+        markdown_content.append("*No messages in this conversation.*")
+        return "\n".join(markdown_content)
+    
+    # Process each message
+    for i, message in enumerate(st.session_state.messages):
+        role = message["role"]
+        content = message["content"]
+        
+        if role == "user":
+            markdown_content.append("## 👤 You")
+            markdown_content.append(content)
+        else:  # assistant
+            # Get personality info for this message
+            personality_key = st.session_state.message_personalities[i] if i < len(st.session_state.message_personalities) else None
+            personalities = st.session_state.personalities
+            
+            if personality_key and personality_key in personalities:
+                personality = personalities[personality_key]
+                emoji = personality["emoji"]
+                name = personality["name"]
+            else:
+                # Fallback to current personality
+                current_personality = personalities.get(st.session_state.current_personality, {})
+                emoji = current_personality.get("emoji", "🤖")
+                name = current_personality.get("name", "Bot")
+            
+            markdown_content.append(f"## {emoji} {name}")
+            markdown_content.append(content)
+        
+        markdown_content.append("")  # Add blank line between messages
+    
+    return "\n".join(markdown_content)
 
 def main():
     """Main app interface."""
@@ -269,7 +314,41 @@ def main():
         if show_thoughts_changed != st.session_state.show_thoughts and not st.session_state.generating:
             st.session_state.show_thoughts = show_thoughts_changed
             st.rerun()  # Rerun to update all message displays
-    
+        
+        st.divider()
+        
+        # Export chat history section
+        st.subheader("📄 Export Chat")
+        
+        # Only show export button if there are messages and not currently generating
+        if st.session_state.messages and not st.session_state.generating:
+            markdown_content = export_chat_to_markdown()
+            
+            # Generate filename with timestamp
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"debate_chat_{timestamp}.md"
+            
+            st.download_button(
+                label="📥 Download Chat History",
+                data=markdown_content,
+                file_name=filename,
+                mime="text/markdown",
+                help="Download the conversation as a markdown file (excludes bot's internal thinking)"
+            )
+            
+            # Show preview of what will be exported
+            with st.expander("📋 Preview Export", expanded=False):
+                st.text(f"File: {filename}")
+                st.text(f"Messages: {len(st.session_state.messages)}")
+                st.text("Format: Markdown (.md)")
+                st.text("Excludes: Internal bot thinking")
+        else:
+            if not st.session_state.messages:
+                st.info("💬 Start a conversation to enable export")
+            else:  # generating
+                st.info("⏳ Export available after response")
+
     # === MAIN CHAT INTERFACE ===
     if not st.session_state.bot_initialized:
         st.info("⚠️ Bot initialization failed. Please check your API key configuration.")

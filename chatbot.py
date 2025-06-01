@@ -45,14 +45,15 @@ def load_personalities() -> Dict:
         print("❌ Error reading personalities.json file")
         return {}
 
-class DebateBot:
+class ChatBot:
     """
-    A debate chatbot using Google's Gemini 2.5 Flash Preview with thinking capabilities.
+    A general-purpose chatbot using Google's Gemini 2.5 Flash Preview with thinking capabilities.
+    Behavior is configured through system prompts and personality settings.
     """
     
     def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20", temperature: float = 1.0):
         """
-        Initialize the DebateBot with API key and model configuration.
+        Initialize the ChatBot with API key and model configuration.
         
         Args:
             api_key: Google API key for Gemini
@@ -291,14 +292,14 @@ if __name__ == "__main__":
             return
         
         try:
-            bot = DebateBot(api_key)
+            bot = ChatBot(api_key)
             bot.update_system_prompt(default_prompt)
             print_colored("✅ Bot initialized successfully!", "green")
         except Exception as e:
             print_colored(f"❌ Failed to initialize bot: {e}", "red")
             return
         
-        print_colored("\nStart debating! Type 'quit' to exit, 'clear' to reset conversation.", "cyan")
+        print_colored("\nStart chatting! Type 'quit' to exit, 'clear' to reset conversation.", "cyan")
         print_colored("=" * 50, "cyan")
         
         while True:
@@ -311,7 +312,7 @@ if __name__ == "__main__":
                     continue
                     
                 if user_input.lower() in ['quit', 'exit', 'q']:
-                    print_colored("\n👋 Thanks for debating! Goodbye!", "green")
+                    print_colored("\n👋 Thanks for chatting! Goodbye!", "green")
                     break
                     
                 if user_input.lower() in ['clear', 'reset']:
