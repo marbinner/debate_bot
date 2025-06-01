@@ -10,5 +10,17 @@
     "description": "A cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical and here to win~ 💕",
     "emoji": "🌸",
     "prompt_file": "prompts/debate_sis.txt"
+  },
+  "debate_baby": {
+    "name": "Debate Baby",
+    "description": "An adorable toddler who accidentally destroys your arguments with innocent questions and baby talk. Don't underestimate the devastating logical precision hidden behind those wide, confused eyes! 👶",
+    "emoji": "👶",
+    "prompt_file": "prompts/debate_baby.txt"
+  },
+  "triggered_lib": {
+    "name": "Triggered Lib",
+    "description": "A hyper-progressive activist with multiple degrees who sees oppression everywhere and gets genuinely triggered by problematic statements. Prepare to have your privilege checked and your internalized biases exposed! ✊",
+    "emoji": "😤",
+    "prompt_file": "prompts/triggered_lib.txt"
   }
 } 
