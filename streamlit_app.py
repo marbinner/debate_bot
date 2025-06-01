@@ -285,14 +285,17 @@ def main():
             personality_key = st.session_state.message_personalities[i] if i < len(st.session_state.message_personalities) else None
             display_message(message["role"], message["content"], thought, personality_key, i)
     
-    # Chat input (disabled during generation) - positioned at bottom outside container
-    if prompt := st.chat_input("Enter your debate topic or argument...", disabled=st.session_state.generating):
-        # Add user message to session state
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.thoughts.append(None)
-        st.session_state.message_personalities.append(None)
-        st.session_state.generating = True
-        st.rerun()  # Rerun to show user message and start generation
+    # Chat input (disabled during generation) - positioned at bottom with same centered width
+    col1_input, col2_input, col3_input = st.columns([1, 3, 1])
+    
+    with col2_input:
+        if prompt := st.chat_input("Enter your debate topic or argument...", disabled=st.session_state.generating):
+            # Add user message to session state
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.session_state.thoughts.append(None)
+            st.session_state.message_personalities.append(None)
+            st.session_state.generating = True
+            st.rerun()  # Rerun to show user message and start generation
     
     # Generate bot response if user just sent a message
     if st.session_state.generating and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
