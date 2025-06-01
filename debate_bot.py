@@ -57,7 +57,7 @@ class DebateBot:
         Args:
             api_key: Google API key for Gemini
             model_name: The Gemini model to use
-            temperature: Temperature for response generation (0.0-2.0)
+            temperature: Temperature for response generation (0.0-5.0)
         """
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
@@ -71,7 +71,7 @@ class DebateBot:
     
     def update_temperature(self, temperature: float):
         """Update the temperature setting."""
-        self.temperature = max(0.0, min(2.0, temperature))  # Clamp between 0.0 and 2.0
+        self.temperature = max(0.0, min(5.0, temperature))  # Clamp between 0.0 and 5.0
     
     async def generate_response_stream(
         self, 
