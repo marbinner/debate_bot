@@ -2,9 +2,10 @@ import streamlit as st
 import asyncio
 import os
 import json
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 from chatbot import ChatBot
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
@@ -75,6 +76,8 @@ def initialize_session_state():
         st.session_state.personalities = load_personalities()
     if 'temperature' not in st.session_state:
         st.session_state.temperature = 1.0
+    if 'state_loaded' not in st.session_state:
+        st.session_state.state_loaded = False
         
     # Auto-initialize the bot after personalities are loaded
     if not st.session_state.bot_initialized and st.session_state.personalities:
@@ -208,6 +211,132 @@ def export_chat_to_markdown() -> str:
     
     return "\n".join(markdown_content)
 
+def export_full_state() -> str:
+    """Export complete conversation state as JSON for later loading."""
+    import datetime
+    
+    state = {
+        "version": "1.0",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "current_personality": st.session_state.current_personality,
+        "temperature": st.session_state.temperature,
+        "show_thoughts": st.session_state.show_thoughts,
+        "messages": st.session_state.messages,
+        "thoughts": st.session_state.thoughts,
+        "message_personalities": st.session_state.message_personalities,
+        "metadata": {
+            "exported_from": "streamlit_app",
+            "message_count": len(st.session_state.messages),
+            "user_messages": len([msg for msg in st.session_state.messages if msg["role"] == "user"]),
+            "assistant_messages": len([msg for msg in st.session_state.messages if msg["role"] == "assistant"])
+        }
+    }
+    
+    return json.dumps(state, indent=2, ensure_ascii=False)
+
+def load_full_state(state_data: str) -> Tuple[bool, str]:
+    """
+    Load complete conversation state from JSON data.
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        state = json.loads(state_data)
+        
+        # Validate state format
+        required_fields = ["messages", "thoughts", "message_personalities", "current_personality"]
+        for field in required_fields:
+            if field not in state:
+                return False, f"Invalid state file: missing field '{field}'"
+        
+        # Validate that the loaded personality exists in the current system
+        personalities = st.session_state.personalities
+        if state["current_personality"] not in personalities:
+            # Fall back to default personality if loaded personality doesn't exist
+            if "debate_bro" in personalities:
+                fallback_personality = "debate_bro"
+            else:
+                fallback_personality = list(personalities.keys())[0] if personalities else "debate_bro"
+            
+            state["current_personality"] = fallback_personality
+        
+        # Validate array lengths to prevent index errors
+        messages = state["messages"]
+        thoughts = state["thoughts"]
+        message_personalities = state["message_personalities"]
+        
+        # Ensure all arrays have the same length
+        max_length = len(messages)
+        
+        # Extend thoughts array if needed
+        while len(thoughts) < max_length:
+            thoughts.append(None)
+        
+        # Extend message_personalities array if needed  
+        while len(message_personalities) < max_length:
+            message_personalities.append(None)
+        
+        # Truncate if arrays are too long
+        thoughts = thoughts[:max_length]
+        message_personalities = message_personalities[:max_length]
+        
+        # Load state into session
+        st.session_state.messages = messages
+        st.session_state.thoughts = thoughts
+        st.session_state.message_personalities = message_personalities
+        st.session_state.current_personality = state["current_personality"]
+        st.session_state.state_loaded = True
+        
+        # Load optional settings with defaults
+        if "temperature" in state:
+            st.session_state.temperature = state["temperature"]
+        if "show_thoughts" in state:
+            st.session_state.show_thoughts = state["show_thoughts"]
+        
+        # Update bot with loaded settings if bot is initialized
+        if st.session_state.bot:
+            try:
+                # Update bot's conversation history
+                bot_history = []
+                for msg in st.session_state.messages:
+                    bot_history.append({"role": msg["role"], "content": msg["content"]})
+                st.session_state.bot.conversation_history = bot_history
+                
+                # Update bot's system prompt based on current personality
+                if st.session_state.current_personality in personalities:
+                    system_prompt = personalities[st.session_state.current_personality]["system_prompt"]
+                    st.session_state.bot.update_system_prompt(system_prompt)
+                
+                # Update bot's temperature
+                st.session_state.bot.update_temperature(st.session_state.temperature)
+            except Exception as e:
+                return False, f"Error updating bot state: {str(e)}"
+        
+        message_count = len(st.session_state.messages)
+        metadata = state.get("metadata", {})
+        
+        return True, f"Successfully loaded {message_count} messages from {metadata.get('timestamp', 'unknown time')}"
+        
+    except json.JSONDecodeError as e:
+        return False, f"Invalid JSON format: {str(e)}"
+    except Exception as e:
+        return False, f"Error loading state: {str(e)}"
+
+def clear_conversation():
+    """Clear all conversation data and reset to initial state."""
+    st.session_state.messages = []
+    st.session_state.thoughts = []
+    st.session_state.message_personalities = []
+    st.session_state.state_loaded = False
+    
+    # Clear file tracking to allow reloading
+    st.session_state.pop("last_loaded_file", None)
+    
+    # Clear bot's history if bot is initialized
+    if st.session_state.bot:
+        st.session_state.bot.clear_history()
+
 def main():
     """Main app interface."""
     initialize_session_state()
@@ -317,37 +446,115 @@ def main():
         
         st.divider()
         
-        # Export chat history section
-        st.subheader("📄 Export Chat")
+        # Save/Load & Export section
+        st.subheader("💾 Save & Load")
         
-        # Only show export button if there are messages and not currently generating
-        if st.session_state.messages and not st.session_state.generating:
-            markdown_content = export_chat_to_markdown()
+        # Only show save/load options if not currently generating
+        if not st.session_state.generating:
+            # Clear conversation button
+            if st.session_state.messages:
+                if st.button("🗑️ Clear Conversation", type="secondary", use_container_width=True):
+                    clear_conversation()
+                    st.rerun()
             
-            # Generate filename with timestamp
-            import datetime
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"debate_chat_{timestamp}.md"
+            # Save current state section
+            if st.session_state.messages:
+                st.write("**Save Current Conversation:**")
+                
+                # Generate filenames with timestamp
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Full state save (JSON)
+                state_data = export_full_state()
+                state_filename = f"debate_state_{timestamp}.json"
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.download_button(
+                        label="💾 Save State",
+                        data=state_data,
+                        file_name=state_filename,
+                        mime="application/json",
+                        help="Save complete conversation state (can be loaded later to continue)",
+                        use_container_width=True
+                    )
+                
+                with col2:
+                    # Markdown export
+                    markdown_content = export_chat_to_markdown()
+                    markdown_filename = f"debate_chat_{timestamp}.md"
+                    
+                    st.download_button(
+                        label="📄 Export MD",
+                        data=markdown_content,
+                        file_name=markdown_filename,
+                        mime="text/markdown",
+                        help="Export as readable markdown (no state info)",
+                        use_container_width=True
+                    )
             
-            st.download_button(
-                label="📥 Download Chat History",
-                data=markdown_content,
-                file_name=filename,
-                mime="text/markdown",
-                help="Download the conversation as a markdown file (excludes bot's internal thinking)"
+            # Load state section
+            st.write("**Load Previous Conversation:**")
+            
+            uploaded_file = st.file_uploader(
+                "Choose a conversation state file",
+                type=['json'],
+                help="Upload a .json state file to continue a previous conversation",
+                key="state_uploader"
             )
             
-            # Show preview of what will be exported
-            with st.expander("📋 Preview Export", expanded=False):
-                st.text(f"File: {filename}")
-                st.text(f"Messages: {len(st.session_state.messages)}")
-                st.text("Format: Markdown (.md)")
-                st.text("Excludes: Internal bot thinking")
+            if uploaded_file is not None:
+                # Check if we've already processed this file to prevent re-processing
+                file_id = f"{uploaded_file.name}_{uploaded_file.size}"
+                if st.session_state.get("last_loaded_file") == file_id:
+                    st.info("💡 File already loaded. Clear conversation or upload a different file to load again.")
+                else:
+                    with st.spinner("Loading conversation state..."):
+                        try:
+                            # Read the uploaded file
+                            state_data = uploaded_file.read().decode('utf-8')
+                            
+                            # Load the state
+                            success, message = load_full_state(state_data)
+                            
+                            if success:
+                                st.success(f"✅ {message}")
+                                # Mark this file as processed
+                                st.session_state.last_loaded_file = file_id
+                                
+                                # Force reinitialize personality and temperature in bot
+                                if st.session_state.bot_initialized:
+                                    try:
+                                        update_personality(st.session_state.current_personality)
+                                        update_temperature(st.session_state.temperature)
+                                        st.info("🔄 Bot updated with loaded settings")
+                                    except Exception as e:
+                                        st.warning(f"⚠️ Note: {str(e)}")
+                                
+                                # Add a small delay before rerun to ensure state is stable
+                                time.sleep(0.1)
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {message}")
+                                
+                        except Exception as e:
+                            st.error(f"❌ Error reading file: {str(e)}")
+            
+            # Show current conversation info
+            if st.session_state.messages:
+                with st.expander("📊 Current Conversation Info", expanded=False):
+                    user_msgs = len([msg for msg in st.session_state.messages if msg["role"] == "user"])
+                    bot_msgs = len([msg for msg in st.session_state.messages if msg["role"] == "assistant"])
+                    
+                    st.text(f"Total Messages: {len(st.session_state.messages)}")
+                    st.text(f"Your Messages: {user_msgs}")
+                    st.text(f"Bot Messages: {bot_msgs}")
+                    st.text(f"Current Personality: {st.session_state.personalities.get(st.session_state.current_personality, {}).get('name', 'Unknown')}")
+                    st.text(f"Temperature: {st.session_state.temperature}")
+                    st.text(f"Show Thoughts: {st.session_state.show_thoughts}")
         else:
-            if not st.session_state.messages:
-                st.info("💬 Start a conversation to enable export")
-            else:  # generating
-                st.info("⏳ Export available after response")
+            st.info("⏳ Save/Load available after response")
 
     # === MAIN CHAT INTERFACE ===
     if not st.session_state.bot_initialized:

@@ -1,6 +1,7 @@
 import os
 import asyncio
 import json
+import datetime
 from typing import AsyncGenerator, Dict, List, Optional, Tuple
 from google import genai
 from google.genai import types
@@ -244,6 +245,97 @@ class ChatBot:
     def update_system_prompt(self, new_prompt: str):
         """Update the system prompt."""
         self.system_prompt = new_prompt
+    
+    def save_conversation_state(self, filepath: str, additional_metadata: Optional[Dict] = None) -> bool:
+        """
+        Save the complete conversation state to a JSON file.
+        
+        Args:
+            filepath: Path where to save the conversation state
+            additional_metadata: Optional additional metadata to save with the state
+            
+        Returns:
+            True if save was successful, False otherwise
+        """
+        try:
+            state = {
+                "version": "1.0",
+                "timestamp": datetime.datetime.now().isoformat(),
+                "model_name": self.model_name,
+                "temperature": self.temperature,
+                "system_prompt": self.system_prompt,
+                "conversation_history": self.conversation_history.copy(),
+                "metadata": additional_metadata or {}
+            }
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(state, f, indent=2, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            print(f"❌ Error saving conversation state: {e}")
+            return False
+    
+    def load_conversation_state(self, filepath: str) -> Tuple[bool, Optional[Dict]]:
+        """
+        Load conversation state from a JSON file.
+        
+        Args:
+            filepath: Path to the saved conversation state file
+            
+        Returns:
+            Tuple of (success, metadata) where success is True if load was successful,
+            and metadata contains any additional saved metadata
+        """
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+            
+            # Validate state format
+            required_fields = ["conversation_history", "system_prompt", "temperature"]
+            for field in required_fields:
+                if field not in state:
+                    print(f"❌ Invalid state file: missing field '{field}'")
+                    return False, None
+            
+            # Load state into current instance
+            self.conversation_history = state["conversation_history"]
+            self.system_prompt = state["system_prompt"]
+            self.temperature = state["temperature"]
+            
+            # Update model name if present and different
+            if "model_name" in state and state["model_name"] != self.model_name:
+                print(f"⚠️ Note: Loaded state was created with model '{state['model_name']}', "
+                      f"currently using '{self.model_name}'")
+            
+            metadata = state.get("metadata", {})
+            print(f"✅ Successfully loaded conversation with {len(self.conversation_history)} messages")
+            
+            return True, metadata
+            
+        except FileNotFoundError:
+            print(f"❌ Conversation state file not found: {filepath}")
+            return False, None
+        except json.JSONDecodeError:
+            print(f"❌ Invalid JSON in state file: {filepath}")
+            return False, None
+        except Exception as e:
+            print(f"❌ Error loading conversation state: {e}")
+            return False, None
+    
+    def get_conversation_summary(self) -> Dict:
+        """Get a summary of the current conversation state."""
+        return {
+            "message_count": len(self.conversation_history),
+            "user_messages": len([msg for msg in self.conversation_history if msg["role"] == "user"]),
+            "assistant_messages": len([msg for msg in self.conversation_history if msg["role"] == "assistant"]),
+            "temperature": self.temperature,
+            "has_system_prompt": bool(self.system_prompt.strip()),
+            "system_prompt_preview": self.system_prompt[:100] + "..." if len(self.system_prompt) > 100 else self.system_prompt
+        }
 
 
 # Interactive terminal interface
@@ -300,6 +392,7 @@ if __name__ == "__main__":
             return
         
         print_colored("\nStart chatting! Type 'quit' to exit, 'clear' to reset conversation.", "cyan")
+        print_colored("Commands: 'save <filename>' to save conversation, 'load <filename>' to load conversation", "cyan")
         print_colored("=" * 50, "cyan")
         
         while True:
@@ -318,6 +411,52 @@ if __name__ == "__main__":
                 if user_input.lower() in ['clear', 'reset']:
                     bot.clear_history()
                     print_colored("🗑️ Conversation cleared!", "yellow")
+                    continue
+                
+                # Handle save command
+                if user_input.lower().startswith('save '):
+                    filename = user_input[5:].strip()
+                    if not filename:
+                        print_colored("❌ Please provide a filename. Usage: save <filename>", "red")
+                        continue
+                    
+                    if not filename.endswith('.json'):
+                        filename += '.json'
+                    
+                    # Add current personality to metadata
+                    metadata = {
+                        "current_personality": current_personality.get("name", "Unknown") if 'current_personality' in locals() else "Unknown",
+                        "saved_from": "terminal_interface"
+                    }
+                    
+                    if bot.save_conversation_state(filename, metadata):
+                        print_colored(f"💾 Conversation saved to {filename}", "green")
+                    else:
+                        print_colored(f"❌ Failed to save conversation to {filename}", "red")
+                    continue
+                
+                # Handle load command
+                if user_input.lower().startswith('load '):
+                    filename = user_input[5:].strip()
+                    if not filename:
+                        print_colored("❌ Please provide a filename. Usage: load <filename>", "red")
+                        continue
+                    
+                    if not filename.endswith('.json'):
+                        filename += '.json'
+                    
+                    success, metadata = bot.load_conversation_state(filename)
+                    if success:
+                        print_colored(f"📁 Conversation loaded from {filename}", "green")
+                        if metadata and "current_personality" in metadata:
+                            print_colored(f"ℹ️ Original personality: {metadata['current_personality']}", "cyan")
+                        
+                        # Show conversation summary
+                        summary = bot.get_conversation_summary()
+                        print_colored(f"📊 Loaded {summary['message_count']} messages "
+                                    f"({summary['user_messages']} from you, {summary['assistant_messages']} from bot)", "cyan")
+                    else:
+                        print_colored(f"❌ Failed to load conversation from {filename}", "red")
                     continue
                 
                 # Show thinking indicator
