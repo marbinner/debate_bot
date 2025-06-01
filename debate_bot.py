@@ -50,22 +50,28 @@ class DebateBot:
     A debate chatbot using Google's Gemini 2.5 Flash Preview with thinking capabilities.
     """
     
-    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20"):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20", temperature: float = 0.8):
         """
         Initialize the DebateBot with API key and model configuration.
         
         Args:
             api_key: Google API key for Gemini
             model_name: The Gemini model to use
+            temperature: Temperature for response generation (0.0-2.0)
         """
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
+        self.temperature = temperature
         self.conversation_history: List[Dict[str, str]] = []
         self.system_prompt = ""  # Will be set by personality system
     
     def add_to_history(self, role: str, content: str):
         """Add a message to the conversation history."""
         self.conversation_history.append({"role": role, "content": content})
+    
+    def update_temperature(self, temperature: float):
+        """Update the temperature setting."""
+        self.temperature = max(0.0, min(2.0, temperature))  # Clamp between 0.0 and 2.0
     
     async def generate_response_stream(
         self, 
@@ -105,8 +111,8 @@ class DebateBot:
                     include_thoughts=include_thoughts
                 ),
                 system_instruction=self.system_prompt,
-                temperature=0.8,
-                max_output_tokens=8192
+                temperature=self.temperature,
+                max_output_tokens=8192 * 4
             )
             
             # Stream the response with full conversation context
@@ -187,7 +193,7 @@ class DebateBot:
                     include_thoughts=include_thoughts
                 ),
                 system_instruction=self.system_prompt,
-                temperature=0.8,
+                temperature=self.temperature,
                 max_output_tokens=8192
             )
             

@@ -73,6 +73,8 @@ def initialize_session_state():
         st.session_state.current_personality = "debate_bro"
     if 'personalities' not in st.session_state:
         st.session_state.personalities = load_personalities()
+    if 'temperature' not in st.session_state:
+        st.session_state.temperature = 0.8
         
     # Auto-initialize the bot after personalities are loaded
     if not st.session_state.bot_initialized and st.session_state.personalities:
@@ -94,8 +96,8 @@ def initialize_bot() -> bool:
         else:
             system_prompt = "You are a helpful AI assistant."
         
-        # Initialize bot with personality
-        st.session_state.bot = DebateBot(api_key)
+        # Initialize bot with personality and temperature
+        st.session_state.bot = DebateBot(api_key, temperature=st.session_state.temperature)
         st.session_state.bot.update_system_prompt(system_prompt)
         st.session_state.bot_initialized = True
         return True
@@ -109,6 +111,12 @@ def update_personality(new_personality: str):
         system_prompt = st.session_state.personalities[new_personality]["system_prompt"]
         st.session_state.bot.update_system_prompt(system_prompt)
         st.session_state.current_personality = new_personality
+
+def update_temperature(new_temperature: float):
+    """Update the bot's temperature setting."""
+    if st.session_state.bot:
+        st.session_state.bot.update_temperature(new_temperature)
+        st.session_state.temperature = new_temperature
 
 async def get_bot_response_stream(user_message: str, include_thoughts: bool = True):
     """Stream bot response with optional thinking process."""
@@ -221,6 +229,27 @@ def main():
                     st.error(f"Failed to update personality: {e}")
         else:
             st.warning("⚠️ No personalities available. Check personalities.json file.")
+        
+        st.divider()
+        
+        # Temperature control
+        st.subheader("🌡️ Temperature")
+        temperature_value = st.slider(
+            "Response creativity/randomness:",
+            min_value=0.0,
+            max_value=2.0,
+            value=st.session_state.temperature,
+            step=0.1,
+            help="Lower values (0.0-0.3) = more focused and deterministic responses. Higher values (0.8-2.0) = more creative and varied responses.",
+            disabled=st.session_state.generating
+        )
+        
+        # Update temperature if changed (not during generation)
+        if abs(temperature_value - st.session_state.temperature) > 0.01 and not st.session_state.generating:
+            try:
+                update_temperature(temperature_value)
+            except Exception as e:
+                st.error(f"Failed to update temperature: {e}")
         
         st.divider()
         
