@@ -115,6 +115,10 @@ class DebateBot:
                 max_output_tokens=8192 * 4
             )
             
+            # Add temperature info to thinking if enabled
+            if include_thoughts:
+                yield (f"[Temperature: {self.temperature}] ", True)
+            
             # Stream the response with full conversation context
             response_stream = self.client.models.generate_content_stream(
                 model=self.model_name,
