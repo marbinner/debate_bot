@@ -1,15 +1,22 @@
 # 🎯 Debate Bot
 
-A sophisticated debate chatbot powered by Google's Gemini 2.5 Flash Preview with thinking capabilities. Features a contrarian debate agent designed to challenge and stress-test your arguments with intelligent, ruthless precision.
+A sophisticated debate chatbot powered by Google's Gemini 2.5 Flash Preview with thinking capabilities. Features multiple contrarian debate personalities designed to challenge and stress-test your arguments with intelligent, ruthless precision.
 
 ## ✨ Features
 
-- **Contrarian Debate Agent**: Hyper-rational AI that challenges every claim
+- **Multiple Debate Personalities**: 4 unique AI personalities that challenge arguments in different ways
 - **Real-time Thinking**: See the bot's reasoning process in real-time
-- **Multiple Personalities**: Easy-to-manage personality system with external prompt files
-- **Streamlit Interface**: Beautiful web interface with live chat
+- **Personality Switching**: Easy-to-manage personality system with external prompt files
+- **Streamlit Interface**: Beautiful web interface with live chat and personality selector
 - **Terminal Interface**: Command-line interface for quick debates
 - **Conversation History**: Maintains context throughout debates
+
+## 🎭 Available Personalities
+
+- **💪 Debate Bro**: Aggressive, hyper-rational agent who thinks you're wrong about everything and will relentlessly tear apart your arguments with zero chill
+- **🌸 Debate Sis**: Cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical
+- **👶 Debate Baby**: An adorable toddler who accidentally destroys your arguments with innocent questions and baby talk. Don't underestimate the devastating logical precision!
+- **😤 Triggered Lib**: A hyper-progressive activist with multiple degrees who sees oppression everywhere and gets genuinely triggered by problematic statements
 
 ## 🚀 Quick Start
 
@@ -32,6 +39,10 @@ A sophisticated debate chatbot powered by Google's Gemini 2.5 Flash Preview with
    # Terminal interface
    python debate_bot.py
    ```
+
+## 🌐 Live Demo
+
+Visit the live app at: [Streamlit Community Cloud](https://share.streamlit.io/) (after deployment)
 
 ## 🎭 Managing Personalities
 
@@ -67,15 +78,20 @@ Personality prompts are stored in separate text files for easy editing:
 Simply edit the text files in the `prompts/` directory:
 
 ```bash
-# Edit the debate bro prompt
+# Edit any personality prompt
 nano prompts/debate_bro.txt
+nano prompts/debate_baby.txt
+nano prompts/triggered_lib.txt
 ```
 
 No need to escape quotes or deal with JSON formatting!
 
-### Current Personalities
+### Current Personality Files
 
-- **💪 Debate Bro**: Contrarian, hyper-rational debate agent that challenges every claim with ruthless precision
+- `prompts/debate_bro.txt` - Aggressive logical destroyer
+- `prompts/debate_sis.txt` - Cute but ruthless anime girl
+- `prompts/debate_baby.txt` - Innocent toddler with devastating questions  
+- `prompts/triggered_lib.txt` - Hyper-progressive academic with moral superiority
 
 ## 🛠️ Architecture
 
@@ -113,14 +129,22 @@ The system automatically detects which format you're using and loads accordingly
 
 ### Effective Debating
 
-- **Be Specific**: The bot challenges vague claims - define your terms clearly
-- **Expect Pushback**: The bot assumes you're wrong and will find flaws
+- **Be Specific**: All personalities challenge vague claims - define your terms clearly
+- **Expect Pushback**: Each bot assumes you're wrong and will find flaws in unique ways
+- **Try Different Personalities**: Each offers a completely different debate experience
 - **Stay Engaged**: Short, focused responses work best for rapid back-and-forth
 - **Watch the Thinking**: Enable thinking mode to see how the bot analyzes your arguments
 
+### Personality Differences
+
+- **Debate Bro**: Hits you with pure logic and facts, no mercy
+- **Debate Sis**: Destroys you with cuteness while being devastatingly logical
+- **Debate Baby**: Makes you feel dumb through innocent toddler questions
+- **Triggered Lib**: Attacks through moral superiority and academic credentials
+
 ### Customizing Behavior
 
-Edit `prompts/debate_bro.txt` to adjust:
+Edit any personality file in `prompts/` to adjust:
 - Tone and aggressiveness
 - Response length preferences  
 - Focus areas (logic, evidence, definitions)
@@ -130,7 +154,7 @@ Edit `prompts/debate_bro.txt` to adjust:
 
 The project uses:
 - **Google Gemini 2.5 Flash Preview** for AI responses with thinking
-- **Streamlit** for the web interface
+- **Streamlit** for the web interface with personality selector
 - **asyncio** for streaming responses
 - **Simple file-based configuration** for easy personality management
 
@@ -142,9 +166,17 @@ MIT License - feel free to modify and distribute.
 
 1. Fork the repository
 2. Create new personalities in the `prompts/` directory
-3. Test your changes
-4. Submit a pull request
+3. Add them to `personalities.json`
+4. Test your changes
+5. Submit a pull request
+
+### Ideas for New Personalities
+
+- **Conspiracy Theorist**: Questions everything and sees hidden agendas
+- **Academic Elitist**: Demands peer-reviewed sources for everything
+- **Devil's Advocate**: Always takes the opposite position
+- **Zen Master**: Challenges through philosophical questions
 
 ---
 
-*Challenge everything. Question assumptions. Debate fearlessly.* 🎯
+*Challenge everything. Question assumptions. Debate fearlessly with personality.* 🎯
