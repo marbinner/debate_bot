@@ -50,7 +50,7 @@ class DebateBot:
     A debate chatbot using Google's Gemini 2.5 Flash Preview with thinking capabilities.
     """
     
-    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20", temperature: float = 0.8):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20", temperature: float = 1.0):
         """
         Initialize the DebateBot with API key and model configuration.
         

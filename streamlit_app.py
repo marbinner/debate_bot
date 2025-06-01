@@ -74,7 +74,7 @@ def initialize_session_state():
     if 'personalities' not in st.session_state:
         st.session_state.personalities = load_personalities()
     if 'temperature' not in st.session_state:
-        st.session_state.temperature = 0.8
+        st.session_state.temperature = 1.0
         
     # Auto-initialize the bot after personalities are loaded
     if not st.session_state.bot_initialized and st.session_state.personalities:
