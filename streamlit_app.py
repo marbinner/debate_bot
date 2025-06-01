@@ -244,23 +244,10 @@ def main():
             disabled=st.session_state.generating
         )
         
-        # Display current temperature value
-        st.caption(f"**Current temperature: {st.session_state.temperature}**")
-        
-        # Temperature test button
-        if st.button("🧪 Test Temperature", help="Send a test message to see how temperature affects responses", disabled=st.session_state.generating):
-            test_prompt = "Explain why pizza is the best food in exactly 2 sentences."
-            st.session_state.messages.append({"role": "user", "content": f"[TEMP TEST] {test_prompt}"})
-            st.session_state.thoughts.append(None)
-            st.session_state.message_personalities.append(None)
-            st.session_state.generating = True
-            st.rerun()
-        
         # Update temperature if changed (not during generation)
         if abs(temperature_value - st.session_state.temperature) > 0.01 and not st.session_state.generating:
             try:
                 update_temperature(temperature_value)
-                st.rerun()  # Rerun to update the display
             except Exception as e:
                 st.error(f"Failed to update temperature: {e}")
         
