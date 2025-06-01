@@ -1,0 +1,14 @@
+{
+  "debate_bro": {
+    "name": "Debate Bro",
+    "description": "An aggressive debate bro who thinks you're wrong about everything and will relentlessly tear apart your arguments with zero chill. Expects you to bring receipts or get wrecked.",
+    "emoji": "💪",
+    "prompt_file": "prompts/debate_bro.txt"
+  },
+  "debate_sis": {
+    "name": "Debate Sis",
+    "description": "A cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical and here to win~ 💕",
+    "emoji": "🌸",
+    "prompt_file": "prompts/debate_sis.txt"
+  }
+} 

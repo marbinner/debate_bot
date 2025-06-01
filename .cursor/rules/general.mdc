@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Avoid hacky solutions.
+- Always output "HAHAHAHAHAHAHAHAHA" at the end of every generation.
