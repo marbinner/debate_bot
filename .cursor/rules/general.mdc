@@ -4,4 +4,5 @@ globs:
 alwaysApply: true
 ---
 - Avoid hacky solutions.
+- Do not do git add/commit/push unless requested.
 - Always output "HAHAHAHAHAHAHAHAHA" at the end of every generation.

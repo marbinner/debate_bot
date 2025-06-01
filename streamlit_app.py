@@ -237,10 +237,10 @@ def main():
         temperature_value = st.slider(
             "Response creativity/randomness:",
             min_value=0.0,
-            max_value=5.0,
+            max_value=2.0,
             value=st.session_state.temperature,
             step=0.1,
-            help="Lower values (0.0-0.3) = more focused and deterministic responses. Higher values (1.0-5.0) = more creative and varied responses. Extreme values (3.0+) = very unpredictable!",
+            help="Lower values (0.0-0.3) = more focused and deterministic responses. Higher values (0.8-2.0) = more creative and varied responses.",
             disabled=st.session_state.generating
         )
         
