@@ -54,6 +54,42 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for better mobile/narrow screen experience
+st.markdown("""
+<style>
+    /* Reduce padding on narrow screens */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Make chat messages use full width on small screens */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        
+        /* Ensure chat input uses full width */
+        .stChatInput > div {
+            max-width: none !important;
+        }
+    }
+    
+    /* Improve sidebar width on narrow screens */
+    @media (max-width: 1024px) {
+        .css-1d391kg {
+            width: 280px;
+        }
+    }
+    
+    /* Better chat message spacing */
+    .stChatMessage {
+        margin-bottom: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 def initialize_session_state():
     """Initialize all session state variables on first run."""
     if 'bot' not in st.session_state:
@@ -561,17 +597,14 @@ def main():
         st.info("⚠️ Bot initialization failed. Please check your API key configuration.")
         return
     
-    # Create a centered container for the chat history display
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Display chat history with responsive layout
+    # Use container without forced margins to utilize full width
+    for i, message in enumerate(st.session_state.messages):
+        thought = st.session_state.thoughts[i] if i < len(st.session_state.thoughts) else None
+        personality_key = st.session_state.message_personalities[i] if i < len(st.session_state.message_personalities) else None
+        display_message(message["role"], message["content"], thought, personality_key, i)
     
-    with col2:
-        # Display chat history
-        for i, message in enumerate(st.session_state.messages):
-            thought = st.session_state.thoughts[i] if i < len(st.session_state.thoughts) else None
-            personality_key = st.session_state.message_personalities[i] if i < len(st.session_state.message_personalities) else None
-            display_message(message["role"], message["content"], thought, personality_key, i)
-    
-    # Chat input (disabled during generation) - must be outside columns to stay at bottom
+    # Chat input (disabled during generation)
     if prompt := st.chat_input("Enter your debate topic or argument...", disabled=st.session_state.generating):
         # Add user message to session state
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -593,54 +626,50 @@ def generate_bot_response():
     current_avatar = current_personality.get("emoji", "🤖")
     current_name = current_personality.get("name", "Bot")
     
-    # Create the same column layout for consistent width
-    col1, col2, col3 = st.columns([1, 3, 1])
-    
-    with col2:
-        # Display bot response with streaming
-        with st.chat_message("assistant", avatar=current_avatar):
-            st.caption(f"*{current_name}*")
+    # Display bot response with streaming - use full width
+    with st.chat_message("assistant", avatar=current_avatar):
+        st.caption(f"*{current_name}*")
+        
+        # Create placeholders in correct order: thoughts first, then response
+        thoughts_placeholder = st.empty()
+        response_placeholder = st.empty()
+        
+        full_response = ""
+        all_thoughts = ""
+        
+        # Show initial state
+        if st.session_state.show_thoughts:
+            with thoughts_placeholder.container():
+                with st.expander("💭 Bot's Thinking", expanded=True):
+                    st.write("*Thinking...*")
+        else:
+            # Only show generating message when thinking is not displayed
+            response_placeholder.write("*Generating response...*")
+        
+        # Stream the response in real-time
+        try:
+            async def stream_and_update():
+                nonlocal full_response, all_thoughts
+                async for content, is_thought in get_bot_response_stream(prompt, include_thoughts=True):
+                    if is_thought:
+                        # Update thinking content
+                        all_thoughts += content
+                        if st.session_state.show_thoughts:
+                            with thoughts_placeholder.container():
+                                with st.expander("💭 Bot's Thinking", expanded=True):
+                                    st.write(all_thoughts)
+                    else:
+                        # Update response content
+                        full_response += content
+                        if full_response.strip():
+                            response_placeholder.write(full_response)
             
-            # Create placeholders in correct order: thoughts first, then response
-            thoughts_placeholder = st.empty()
-            response_placeholder = st.empty()
-            
-            full_response = ""
-            all_thoughts = ""
-            
-            # Show initial state
-            if st.session_state.show_thoughts:
-                with thoughts_placeholder.container():
-                    with st.expander("💭 Bot's Thinking", expanded=True):
-                        st.write("*Thinking...*")
-            else:
-                # Only show generating message when thinking is not displayed
-                response_placeholder.write("*Generating response...*")
-            
-            # Stream the response in real-time
-            try:
-                async def stream_and_update():
-                    nonlocal full_response, all_thoughts
-                    async for content, is_thought in get_bot_response_stream(prompt, include_thoughts=True):
-                        if is_thought:
-                            # Update thinking content
-                            all_thoughts += content
-                            if st.session_state.show_thoughts:
-                                with thoughts_placeholder.container():
-                                    with st.expander("💭 Bot's Thinking", expanded=True):
-                                        st.write(all_thoughts)
-                        else:
-                            # Update response content
-                            full_response += content
-                            if full_response.strip():
-                                response_placeholder.write(full_response)
-                
-                # Run the streaming
-                asyncio.run(stream_and_update())
-            except Exception as e:
-                error_msg = f"Error generating response: {str(e)}"
-                response_placeholder.write(error_msg)
-                full_response = error_msg
+            # Run the streaming
+            asyncio.run(stream_and_update())
+        except Exception as e:
+            error_msg = f"Error generating response: {str(e)}"
+            response_placeholder.write(error_msg)
+            full_response = error_msg
     
     # Save completed response to session state
     st.session_state.messages.append({"role": "assistant", "content": full_response})
