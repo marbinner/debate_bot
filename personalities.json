@@ -5,6 +5,12 @@
     "emoji": "💪",
     "prompt_file": "prompts/debate_bro.txt"
   },
+  "debate_bro_v2": {
+    "name": "Debate Bro V2",
+    "description": "An evolved debate bro with an enhanced internal reasoning engine that systematically dismantles arguments with surgical precision. All the ruthless contrarian energy of the original, now powered by flawless analytical processes.",
+    "emoji": "🧠",
+    "prompt_file": "prompts/debate_bro_v2.txt"
+  },
   "debate_sis": {
     "name": "Debate Sis",
     "description": "A cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical and here to win~ 💕",

@@ -337,6 +337,283 @@ class ChatBot:
             "system_prompt_preview": self.system_prompt[:100] + "..." if len(self.system_prompt) > 100 else self.system_prompt
         }
 
+class BotDebateManager:
+    """
+    Manages debates between two bot personalities.
+    Each bot maintains their own conversation history and thinks the other bot is a human.
+    """
+    
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-preview-05-20"):
+        """
+        Initialize the debate manager with two bot instances.
+        
+        Args:
+            api_key: Google API key for Gemini
+            model_name: The Gemini model to use for both bots
+        """
+        self.api_key = api_key
+        self.model_name = model_name
+        self.bot_a = None
+        self.bot_b = None
+        self.personality_a = None
+        self.personality_b = None
+        self.debate_history = []  # Combined history for display
+        self.current_turn = "A"  # Which bot goes next
+        self.turn_count = 0
+    
+    def setup_debate(
+        self, 
+        personality_a_key: str, 
+        personality_a_prompt: str,
+        personality_b_key: str, 
+        personality_b_prompt: str,
+        temperature_a: float = 1.0,
+        temperature_b: float = 1.0
+    ):
+        """
+        Set up the two bots with their personalities.
+        
+        Args:
+            personality_a_key: Key for personality A
+            personality_a_prompt: System prompt for bot A
+            personality_b_key: Key for personality B  
+            personality_b_prompt: System prompt for bot B
+            temperature_a: Temperature for bot A
+            temperature_b: Temperature for bot B
+        """
+        try:
+            # Initialize both bots
+            self.bot_a = ChatBot(self.api_key, self.model_name, temperature_a)
+            self.bot_b = ChatBot(self.api_key, self.model_name, temperature_b)
+            
+            # Set up their personalities
+            self.bot_a.update_system_prompt(personality_a_prompt)
+            self.bot_b.update_system_prompt(personality_b_prompt)
+            
+            # Store personality info
+            self.personality_a = personality_a_key
+            self.personality_b = personality_b_key
+            
+            return True
+        except Exception as e:
+            print(f"❌ Error setting up debate: {e}")
+            return False
+    
+    def start_debate(self, initial_claim: str, starting_bot: str = "A"):
+        """
+        Start the debate with an initial claim.
+        
+        Args:
+            initial_claim: The initial statement to debate
+            starting_bot: Which bot starts ("A" or "B")
+        """
+        self.debate_history = []
+        self.turn_count = 0
+        self.current_turn = starting_bot
+        
+        # Add the initial claim to the debate history
+        self.debate_history.append({
+            "bot": starting_bot,
+            "personality": self.personality_a if starting_bot == "A" else self.personality_b,
+            "content": initial_claim,
+            "thought": None,
+            "turn": self.turn_count
+        })
+        
+        # Add initial claim to the starting bot's history
+        starting_bot_instance = self.bot_a if starting_bot == "A" else self.bot_b
+        starting_bot_instance.add_to_history("assistant", initial_claim)
+        
+        # Set next turn to the other bot
+        self.current_turn = "B" if starting_bot == "A" else "A"
+        self.turn_count += 1
+    
+    async def next_turn(self, include_thoughts: bool = True) -> Tuple[str, Optional[str], str]:
+        """
+        Generate the next response in the debate.
+        
+        Args:
+            include_thoughts: Whether to include thought processes
+            
+        Returns:
+            Tuple of (response_text, thought_summary, responding_bot)
+        """
+        if not self.bot_a or not self.bot_b:
+            raise ValueError("Debate not properly set up. Call setup_debate() first.")
+        
+        if not self.debate_history:
+            raise ValueError("Debate not started. Call start_debate() first.")
+        
+        # Get the last message from the other bot
+        last_message = self.debate_history[-1]
+        last_content = last_message["content"]
+        
+        # Determine which bot responds
+        responding_bot = self.bot_a if self.current_turn == "A" else self.bot_b
+        responding_bot_key = self.current_turn
+        responding_personality = self.personality_a if self.current_turn == "A" else self.personality_b
+        
+        try:
+            # Generate response
+            response_text, thought_summary = await responding_bot.generate_response(
+                last_content, include_thoughts=include_thoughts
+            )
+            
+            # Add to debate history
+            self.debate_history.append({
+                "bot": responding_bot_key,
+                "personality": responding_personality,
+                "content": response_text,
+                "thought": thought_summary,
+                "turn": self.turn_count
+            })
+            
+            # Add the response to the other bot's history as a "user" message
+            # This makes each bot think the other is a human
+            other_bot = self.bot_b if self.current_turn == "A" else self.bot_a
+            other_bot.add_to_history("user", response_text)
+            
+            # Switch turns
+            self.current_turn = "B" if self.current_turn == "A" else "A"
+            self.turn_count += 1
+            
+            return response_text, thought_summary, responding_bot_key
+            
+        except Exception as e:
+            error_message = f"Error generating response: {str(e)}"
+            return error_message, None, responding_bot_key
+    
+    async def next_turn_stream(self, include_thoughts: bool = True):
+        """
+        Generate the next response in the debate with streaming.
+        
+        Args:
+            include_thoughts: Whether to include thought processes
+            
+        Yields:
+            Tuple of (content, is_thought, responding_bot_key)
+        """
+        if not self.bot_a or not self.bot_b:
+            raise ValueError("Debate not properly set up. Call setup_debate() first.")
+        
+        if not self.debate_history:
+            raise ValueError("Debate not started. Call start_debate() first.")
+        
+        # Get the last message from the other bot
+        last_message = self.debate_history[-1]
+        last_content = last_message["content"]
+        
+        # Determine which bot responds
+        responding_bot = self.bot_a if self.current_turn == "A" else self.bot_b
+        responding_bot_key = self.current_turn
+        responding_personality = self.personality_a if self.current_turn == "A" else self.personality_b
+        
+        full_response = ""
+        all_thoughts = ""
+        
+        try:
+            # Stream the response
+            async for content, is_thought in responding_bot.generate_response_stream(
+                last_content, include_thoughts=include_thoughts
+            ):
+                if is_thought:
+                    all_thoughts += content
+                else:
+                    full_response += content
+                
+                yield content, is_thought, responding_bot_key
+            
+            # Add to debate history
+            self.debate_history.append({
+                "bot": responding_bot_key,
+                "personality": responding_personality,
+                "content": full_response,
+                "thought": all_thoughts.strip() if all_thoughts.strip() else None,
+                "turn": self.turn_count
+            })
+            
+            # Add the response to the other bot's history as a "user" message
+            other_bot = self.bot_b if self.current_turn == "A" else self.bot_a
+            other_bot.add_to_history("user", full_response)
+            
+            # Switch turns
+            self.current_turn = "B" if self.current_turn == "A" else "A"
+            self.turn_count += 1
+            
+        except Exception as e:
+            error_message = f"Error generating response: {str(e)}"
+            yield error_message, False, responding_bot_key
+    
+    def get_debate_history(self) -> List[Dict]:
+        """Get the complete debate history."""
+        return self.debate_history.copy()
+    
+    def get_debate_summary(self) -> Dict:
+        """Get a summary of the current debate state."""
+        return {
+            "total_turns": len(self.debate_history),
+            "current_turn": self.current_turn,
+            "turn_count": self.turn_count,
+            "personality_a": self.personality_a,
+            "personality_b": self.personality_b,
+            "bot_a_messages": len([msg for msg in self.debate_history if msg["bot"] == "A"]),
+            "bot_b_messages": len([msg for msg in self.debate_history if msg["bot"] == "B"])
+        }
+    
+    def clear_debate(self):
+        """Clear the current debate and reset both bots."""
+        self.debate_history = []
+        self.current_turn = "A"
+        self.turn_count = 0
+        
+        if self.bot_a:
+            self.bot_a.clear_history()
+        if self.bot_b:
+            self.bot_b.clear_history()
+    
+    def export_debate_to_markdown(self, personalities_dict: Dict = None) -> str:
+        """Export debate history to markdown format."""
+        import datetime
+        
+        markdown_content = []
+        markdown_content.append("# Bot vs Bot Debate")
+        markdown_content.append(f"*Exported on {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M:%S')}*")
+        markdown_content.append("")
+        
+        if personalities_dict:
+            # Add personality info
+            personality_a_info = personalities_dict.get(self.personality_a, {})
+            personality_b_info = personalities_dict.get(self.personality_b, {})
+            
+            markdown_content.append("## Debate Participants")
+            markdown_content.append(f"**Bot A:** {personality_a_info.get('emoji', '🤖')} {personality_a_info.get('name', 'Bot A')}")
+            markdown_content.append(f"**Bot B:** {personality_b_info.get('emoji', '🤖')} {personality_b_info.get('name', 'Bot B')}")
+            markdown_content.append("")
+        
+        if not self.debate_history:
+            markdown_content.append("*No messages in this debate.*")
+            return "\n".join(markdown_content)
+        
+        # Process each message
+        for message in self.debate_history:
+            bot_key = message["bot"]
+            content = message["content"]
+            turn = message.get("turn", 0)
+            
+            # Get personality info
+            if personalities_dict and message["personality"] in personalities_dict:
+                personality = personalities_dict[message["personality"]]
+                emoji = personality.get("emoji", "🤖")
+                name = personality.get("name", f"Bot {bot_key}")
+            else:
+                emoji = "🤖"
+                name = f"Bot {bot_key}"
+            
+            markdown_content.append(f"## Turn {turn + 1}: {emoji} {name}")
+            markdown_content.append(content)
+            markdown_content.append("")
+        
+        return "\n".join(markdown_content)
 
 # Interactive terminal interface
 if __name__ == "__main__":

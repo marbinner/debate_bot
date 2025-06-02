@@ -1,383 +1,142 @@
-# 🤖 Personality-Driven ChatBot
+# 🎯 Debate Bot - AI-Powered Debate Platform
 
-A general-purpose chatbot powered by Google's Gemini 2.5 Flash Preview with thinking capabilities. Features a flexible personality system that allows the bot to take on different behaviors through external prompt files. Currently includes multiple debate personalities designed to challenge and stress-test your arguments with intelligent precision.
+A sophisticated Streamlit application that enables engaging debates between humans and AI bots, or between two AI bots with different personalities. Built with Google's Gemini API for natural language generation.
 
 ## ✨ Features
 
-- **Flexible Personality System**: Easily configurable AI personalities through external prompt files
-- **Real-time Thinking**: See the bot's reasoning process in real-time
-- **Hot-swappable Personalities**: Easy-to-manage personality system with external prompt files
-- **Streamlit Interface**: Beautiful web interface with live chat and personality selector
-- **Terminal Interface**: Command-line interface for quick conversations
-- **Conversation History**: Maintains context throughout conversations
-- **Save & Load Conversations**: Save complete conversation state and resume later with robust error handling
-- **Export Functionality**: Download chat history as markdown files
-- **Temperature Control**: Adjust response creativity and randomness
-- **Cross-Platform State Sharing**: State files work seamlessly between terminal and web interfaces
-- **Automatic State Validation**: Smart fallbacks and error recovery for corrupted or incompatible state files
+### 🤖 Dual Mode Interface
+- **Human vs Bot**: Interactive debates with customizable AI personalities
+- **Bot vs Bot**: Automated debates between two AI personalities with configurable generation
 
-## 🎭 Included Personalities (Debate Focus)
+### 🎭 Personality System
+- Multiple debate personalities (debate_bro, debate_sis, etc.)
+- JSON-based configuration for easy customization
+- Distinct visual indicators (emojis, names) for each personality
 
-- **💪 Debate Bro**: Aggressive, hyper-rational agent who thinks you're wrong about everything and will relentlessly tear apart your arguments with zero chill
-- **🌸 Debate Sis**: Cute, bubbly anime girl who dismantles your arguments with giggles and pet names. Don't let the kawaii exterior fool you - she's ruthlessly logical
-- **👶 Debate Baby**: An adorable toddler who accidentally destroys your arguments with innocent questions and baby talk. Don't underestimate the devastating logical precision!
-- **😤 Triggered Lib**: A hyper-progressive activist with multiple degrees who sees oppression everywhere and gets genuinely triggered by problematic statements
+### ⚡ Advanced Generation
+- **Real-time streaming** responses with thinking process visibility
+- **Multi-turn generation**: 1-10 turns per button press
+- **Configurable creativity** via temperature settings (0.0-2.0)
+- **Progress tracking** with visual indicators
+
+### 💾 Data Management
+- **Save/Load** conversation states (JSON format)
+- **Export** debates to readable Markdown
+- **Session persistence** with proper state management
+
+### 📱 User Experience
+- **Responsive design** optimized for desktop and mobile
+- **Immediate UI feedback** - buttons respond instantly to clicks
+- **Clean state transitions** between setup and active debate phases
+- **Collapsible thinking panels** (collapsed by default)
 
 ## 🚀 Quick Start
 
-1. **Install dependencies:**
+1. **Setup Environment**
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Set up your API key:**
+2. **Configure API Key**
    Create a `.env` file:
    ```
    GOOGLE_API_KEY=your_gemini_api_key_here
    ```
 
-3. **Run the app:**
+3. **Run Application**
    ```bash
-   # Web interface (recommended)
    streamlit run streamlit_app.py
-   
-   # Terminal interface
-   python chatbot.py
    ```
 
-## 🌐 Live Demo
+4. **Start Debating!**
+   - Choose Human vs Bot or Bot vs Bot mode
+   - Configure personalities and settings in sidebar
+   - Enter initial claim and start debating
 
-Visit the live app at: [Streamlit Community Cloud](https://share.streamlit.io/) (after deployment)
-
-## 🎭 Personality System
-
-### Easy Prompt Editing
-
-Personality prompts are stored in separate text files for easy editing:
-
-- **Configuration**: `personalities.json` - Contains metadata and references to prompt files
-- **Prompts**: `prompts/` directory - Contains the actual system prompts as plain text files
-
-### Adding a New Personality
-
-1. **Create a prompt file:**
-   ```bash
-   # Create your prompt file
-   echo "Your system prompt here..." > prompts/my_personality.txt
-   ```
-
-2. **Add to personalities.json:**
-   ```json
-   {
-     "my_personality": {
-       "name": "My Personality",
-       "description": "Description of the personality",
-       "emoji": "🎪",
-       "prompt_file": "prompts/my_personality.txt"
-     }
-   }
-   ```
-
-### Editing Existing Prompts
-
-Simply edit the text files in the `prompts/` directory:
-
-```bash
-# Edit any personality prompt
-nano prompts/debate_bro.txt
-nano prompts/debate_baby.txt
-nano prompts/triggered_lib.txt
-```
-
-No need to escape quotes or deal with JSON formatting!
-
-### Current Personality Files
-
-- `prompts/debate_bro.txt` - Aggressive logical destroyer
-- `prompts/debate_sis.txt` - Cute but ruthless anime girl
-- `prompts/debate_baby.txt` - Innocent toddler with devastating questions  
-- `prompts/triggered_lib.txt` - Hyper-progressive academic with moral superiority
-
-## 🛠️ Architecture
+## 🏗️ Architecture
 
 ### Core Components
+- **Frontend**: Streamlit with custom CSS and responsive design
+- **Backend**: ChatBot and BotDebateManager classes (chatbot.py)
+- **AI Model**: Google Gemini via official API
+- **Configuration**: JSON-based personality and prompt system
 
-- **`chatbot.py`**: General-purpose ChatBot class with Gemini API integration
-- **`streamlit_app.py`**: Web interface with personality management
-- **`personalities.json`**: Configuration file for all personalities
-- **`prompts/`**: Directory containing system prompt files
+### State Management
+- Streamlit session state with proper cleanup
+- Immediate UI updates via strategic `st.rerun()` calls
+- Separate sidebar contexts for each mode
 
-### Prompt Loading System
+### Key Files
+- `streamlit_app.py` - Main application interface
+- `chatbot.py` - Core AI interaction classes
+- `personalities.json` - Bot personality configurations
+- `prompts/` - External prompt files for personalities
 
-The bot supports two ways to define system prompts:
+## 🎛️ Configuration
 
-1. **External Files** (recommended):
-   ```json
-   {
-     "personality_key": {
-       "name": "Name",
-       "description": "Description", 
-       "emoji": "🎯",
-       "prompt_file": "prompts/file.txt"
-     }
-   }
-   ```
-
-2. **Inline** (legacy):
-   ```json
-   {
-     "personality_key": {
-       "name": "Name",
-       "description": "Description",
-       "emoji": "🎯", 
-       "system_prompt": "Your prompt here..."
-     }
-   }
-   ```
-
-The system automatically detects which format you're using and loads accordingly.
-
-## 💡 Usage Tips
-
-### Effective Conversations
-
-- **Be Specific**: Many personalities challenge vague claims - define your terms clearly
-- **Experiment with Personalities**: Each offers a completely different conversation experience
-- **Adjust Temperature**: Lower values (0.1-0.3) for consistent responses, higher (0.8-2.0) for creativity
-- **Watch the Thinking**: Enable thinking mode to see how the bot analyzes your messages
-- **Export Conversations**: Save interesting conversations as markdown files
-
-### Creating New Personality Types
-
-The system is designed to support any type of personality, not just debate-focused ones:
-
-- **Helpful Assistant**: Traditional supportive AI helper
-- **Creative Writer**: Collaborative storytelling and writing partner
-- **Teacher**: Educational and explanatory responses
-- **Therapist**: Supportive and reflective conversations
-- **Expert Consultant**: Domain-specific expertise (law, medicine, tech, etc.)
-
-### Customizing Behavior
-
-Edit any personality file in `prompts/` to adjust:
-- Tone and communication style
-- Response length preferences  
-- Focus areas and expertise
-- Conversation approach and goals
-
-## 🔧 Development
-
-The project uses:
-- **Google Gemini 2.5 Flash Preview** for AI responses with thinking
-- **Streamlit** for the web interface with personality management
-- **asyncio** for streaming responses
-- **Simple file-based configuration** for easy personality management
-
-### Recent Improvements
-
-- **Robust State Management**: Complete save/load system with automatic validation
-- **Error Recovery**: Smart fallbacks for corrupted or incompatible state files
-- **Cross-Platform Compatibility**: Seamless state sharing between interfaces
-- **Performance Optimizations**: Reduced memory usage and faster loading
-- **User Experience**: Better feedback, loading indicators, and error messages
-
-### Architecture Overview
-
-```
-debate_bot/
-├── chatbot.py              # Core ChatBot class with Gemini integration
-├── streamlit_app.py        # Web interface with state management
-├── personalities.json     # Personality configuration
-├── prompts/               # Individual personality prompt files
-├── example_conversation_state.json  # Example state file
-├── requirements.txt       # Python dependencies
-└── .env                  # API keys (create this file)
-```
-
-### Key Components
-
-- **ChatBot Class**: Handles conversation, thinking, and state persistence
-- **Personality System**: Modular prompt loading with hot-swapping
-- **State Management**: JSON-based conversation persistence with validation
-- **Streaming Interface**: Real-time response generation with thinking display
-
-## 📝 License
-
-MIT License - feel free to modify and distribute.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create new personalities in the `prompts/` directory
-3. Add them to `personalities.json`
-4. Test your changes
-5. Submit a pull request
-
-### Ideas for New Personalities
-
-**Debate & Challenge:**
-- **Conspiracy Theorist**: Questions everything and sees hidden agendas
-- **Academic Elitist**: Demands peer-reviewed sources for everything
-- **Devil's Advocate**: Always takes the opposite position
-
-**Helpful & Supportive:**
-- **Life Coach**: Motivational and goal-oriented guidance
-- **Therapist**: Empathetic listening and reflection
-- **Teacher**: Educational explanations and examples
-
-**Creative & Fun:**
-- **Storyteller**: Creative writing and worldbuilding
-- **Game Master**: RPG and interactive story facilitation
-- **Comedy Writer**: Humor and witty banter
-
-**Expert Consultants:**
-- **Tech Expert**: Programming and technology guidance
-- **Business Advisor**: Strategic and operational advice
-- **Fitness Coach**: Health and wellness guidance
-
----
-
-*Build any conversational AI personality with simple text files.* 🤖
-
-## 💾 Save & Load Conversations
-
-### Full State Management
-
-The bot now supports saving and loading complete conversation states, allowing you to:
-
-- **Continue conversations** exactly where you left off
-- **Share conversation states** with others
-- **Archive interesting discussions** for later reference
-- **Switch between devices** while maintaining conversation context
-
-### What Gets Saved
-
-When you save a conversation state, it includes:
-- **All messages** (user and bot responses)
-- **Thinking processes** (if available)
-- **Personality history** (which personality responded to each message)
-- **Current settings** (personality, temperature, thinking visibility)
-- **Metadata** (timestamps, message counts, export source)
-
-### How to Use
-
-#### Streamlit Interface
-
-1. **Save Current Conversation:**
-   - Navigate to the "💾 Save & Load" section in the sidebar
-   - Click "💾 Save State" to download a `.json` file with complete conversation state
-   - Click "📄 Export MD" to download a readable markdown version (no state info)
-
-2. **Load Previous Conversation:**
-   - Use the file uploader in the "💾 Save & Load" section
-   - Select a previously saved `.json` state file
-   - The conversation will be restored with all original settings
-
-3. **Clear Conversation:**
-   - Click "🗑️ Clear Conversation" to start fresh
-
-#### Terminal Interface
-
-1. **Save conversation:**
-   ```
-   save my_conversation
-   # or
-   save my_conversation.json
-   ```
-
-2. **Load conversation:**
-   ```
-   load my_conversation
-   # or  
-   load my_conversation.json
-   ```
-
-3. **Clear conversation:**
-   ```
-   clear
-   # or
-   reset
-   ```
-
-### File Formats
-
-#### State File (.json)
-Complete conversation state with all metadata:
+### Personality System
+Edit `personalities.json` to customize bot personalities:
 ```json
 {
-  "version": "1.0",
-  "timestamp": "2024-12-19T10:30:00.000000",
-  "current_personality": "debate_bro",
-  "temperature": 1.2,
-  "show_thoughts": true,
-  "messages": [...],
-  "thoughts": [...],
-  "message_personalities": [...],
-  "metadata": {...}
+  "debate_bro": {
+    "name": "Debate Bro",
+    "emoji": "🎯",
+    "description": "Aggressive, confident debater",
+    "prompt_file": "prompts/debate_bro.txt"
+  }
 }
 ```
 
-#### Markdown Export (.md)
-Human-readable conversation transcript:
-```markdown
-# Debate Bot Chat History
-*Exported on 2024-12-19 at 10:30:00*
+### Temperature Settings
+- **0.0-0.3**: Focused, deterministic responses
+- **0.5-0.8**: Balanced creativity and consistency  
+- **1.0-2.0**: Highly creative and varied responses
 
-## 👤 You
-Your message here...
+## 🔧 Technical Improvements
 
-## 💪 Debate Bro  
-Bot response here...
-```
+### Version 2.0 Enhancements
+- **Immediate UI Responsiveness**: Buttons hide/disable instantly on click
+- **Progress Tracking**: Visual progress bars for multi-turn generation
+- **Clean State Management**: Eliminated circular dependencies
+- **Improved Architecture**: Separate sidebar/interface functions
+- **Better Documentation**: Comprehensive function documentation
+- **Mobile Optimization**: Responsive design improvements
 
-### Cross-Platform Compatibility
+### Bug Fixes
+- Fixed text input real-time updates (text_input vs text_area)
+- Resolved button state management issues
+- Eliminated race conditions in UI updates
+- Proper cleanup of session state variables
 
-State files are compatible between:
-- **Streamlit web interface** ↔ **Terminal interface**
-- **Different devices** running the same bot version
-- **Shared conversations** between users (personality prompts must exist)
+## 📊 Bot vs Bot Features
 
-### Best Practices
+### Smart Generation Flow
+1. **Initial Setup**: Real-time claim input with instant button updates
+2. **Auto Start**: First two turns generate automatically
+3. **Manual Control**: Continue with configurable turn counts
+4. **Progress Tracking**: Visual feedback during multi-turn generation
 
-- **Save regularly** during long conversations
-- **Use descriptive filenames** (e.g., `debate_pineapple_pizza_2024.json`)
-- **Keep state files** for interesting conversations you want to revisit
-- **Share state files** to continue conversations on different devices
+### Visual Distinction
+- **Bot A**: 🔵 Blue indicator
+- **Bot B**: 🔴 Red indicator
+- Clear naming: "Bot A (Personality Name) 🎭"
 
-### Troubleshooting
+## 🤝 Contributing
 
-#### Common Issues & Solutions
+The codebase is well-documented and modular. Key areas for contribution:
+- New personality types in `personalities.json`
+- Additional prompt templates in `prompts/`
+- UI/UX improvements in `streamlit_app.py`
+- Core functionality in `chatbot.py`
 
-**File Already Loaded Message:**
-- This prevents accidental re-processing of the same file
-- Solution: Clear the conversation first, then upload the file again
+## 📄 License
 
-**Personality Not Found:**
-- The loaded conversation uses a personality that doesn't exist in your current setup
-- Solution: The system automatically falls back to available personalities and shows a warning
+Open source - feel free to use and modify for your projects!
 
-**Array Length Errors (Fixed in Latest Version):**
-- Previous versions had issues with mismatched message/thought arrays
-- Solution: Update to latest version - automatic validation and repair included
+## 🎯 Future Enhancements
 
-**Upload Doesn't Work:**
-- Make sure you're uploading a `.json` file (not `.md`)
-- Check that the file was generated by this bot (not manually created)
-- Ensure the file size is reasonable (under 10MB)
-
-**Bot Settings Not Loading:**
-- Temperature and personality should update automatically after loading
-- If not, manually adjust them in the sidebar after loading
-
-#### Recovery Options
-
-If a state file seems corrupted:
-1. Try loading it in the terminal interface first: `python chatbot.py` then `load filename.json`
-2. Check the JSON syntax with an online validator
-3. Use the `example_conversation_state.json` as a template for manual repairs
-
-#### Getting Help
-
-- Check the console output (terminal interface) for detailed error messages
-- Ensure your `.env` file has a valid `GOOGLE_API_KEY`
-- Verify all personality prompt files exist in the `prompts/` directory
+- Voice input/output support
+- Debate scoring system
+- Historical debate analytics
+- Custom prompt creation interface
+- Integration with other AI models
